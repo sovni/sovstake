@@ -21,6 +21,7 @@ contract SovStake is Ownable{
     mapping(address => uint) private stakersDate;
     AggregatorV3Interface internal priceFeed;
     uint private tvl;
+    uint private ratio;
 
     constructor(address _stakeToken, address _priceFeed) {
         // DAI/ETH price Feed on Kovan testnet
@@ -30,6 +31,7 @@ contract SovStake is Ownable{
         //dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
         stakeToken = IERC20(_stakeToken);
         //rewardToken = IERC20(_stakeToken);
+        ratio = 0.01;
     }
 
     function stake(uint quantity) public {
@@ -43,9 +45,10 @@ contract SovStake is Ownable{
     }
 
     function withdraw() public {
-        if (stakers[msg.sender] > 0 && stakersDate[msg.sender] > 0) {
-            computeRewards(msg.sender);
-        }
+        require(stakers[msg.sender] == 0, "No staked token.");
+        require(stakersDate[msg.sender] == 0, "No stake date registered.");
+        
+        computeRewards(msg.sender);
         uint quantity = stakers[msg.sender];
         stakers[msg.sender] = 0;
         stakersDate[msg.sender] = 0;
@@ -53,7 +56,13 @@ contract SovStake is Ownable{
     }
 
     function computeRewards(address staker) private {
+        require(stakers[msg.sender] == 0, "No staked token.");
+        require(stakersDate[msg.sender] == 0, "No stake date registered.");
 
+        int rewards = (getLatestPrice() * stakers[msg.sender]) * (block.timestamp - stakersDate[msg.sender]) * ratio;
+
+        stakersDate[msg.sender] = block.timestamp;
+        rewardToken.transfer(msg.sender, rewards);
     }
    
     // Return latest price of DIA in ETH
