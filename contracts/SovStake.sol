@@ -20,6 +20,7 @@ contract SovStake is Ownable{
     mapping(address => uint) private stakers;
     mapping(address => uint) private stakersDate;
     AggregatorV3Interface internal priceFeed;
+    uint private tvl;
 
     constructor(address _stakeToken, address _priceFeed) {
         // DAI/ETH price Feed on Kovan testnet
@@ -36,6 +37,7 @@ contract SovStake is Ownable{
             computeRewards(msg.sender);
         }
         stakers[msg.sender] =  stakers[msg.sender] + quantity;
+        tvl += quantity;
         stakersDate[msg.sender] = block.timestamp;
         stakeToken.transferFrom(msg.sender, address(this), quantity);
     }
