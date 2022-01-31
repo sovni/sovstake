@@ -42,6 +42,16 @@ contract SovStake is Ownable{
         stakeToken.transferFrom(msg.sender, address(this), quantity);
     }
 
+    function withdraw() public {
+        if (stakers[msg.sender] > 0 && stakersDate[msg.sender] > 0) {
+            computeRewards(msg.sender);
+        }
+        uint quantity = stakers[msg.sender];
+        stakers[msg.sender] = 0;
+        stakersDate[msg.sender] = 0;
+        stakeToken.transfer(msg.sender, quantity);        
+    }
+
     function computeRewards(address staker) private {
 
     }
