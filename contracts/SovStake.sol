@@ -23,6 +23,9 @@ contract SovStake is Ownable{
     uint private tvl;
     uint private ratio;
 
+    event TokenStaked();
+    event TokenWithdrawn();
+
     using SafeMath for uint;
 
     constructor(address _stakeToken, address _priceFeed) {
@@ -44,6 +47,7 @@ contract SovStake is Ownable{
         tvl = tvl.add(quantity);
         stakersDate[msg.sender] = block.timestamp;
         stakeToken.transferFrom(msg.sender, address(this), quantity);
+        emit TokenStaked();
     }
 
     function withdraw() public {
@@ -55,6 +59,7 @@ contract SovStake is Ownable{
         stakers[msg.sender] = 0;
         stakersDate[msg.sender] = 0;
         stakeToken.transfer(msg.sender, quantity);        
+        emit TokenWithdrawn();
     }
 
     function computeRewards(address staker) private {
