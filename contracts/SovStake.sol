@@ -7,14 +7,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract SovToken is ERC20 {
-    constructor(uint256 initialSupply) ERC20("SovToken", "SOV") {
-        _mint(msg.sender, initialSupply);
+contract Dai is ERC20 {
+    constructor() ERC20("DAI", "DAI") {
+        _mint(msg.sender, 21000000000000000000000000);
     }
 }
 
+contract SovToken is ERC20 {
+    constructor() ERC20("SovToken", "SOV") {
+        _mint(msg.sender, 21000000000000000000000000);
+    }
+}
+
+
 contract SovStake is Ownable{
-    IERC20 stakeToken;
+    //IERC20 stakeToken;
+    Dai stakeToken;
     SovToken rewardToken;
 
     mapping(address => uint) private stakers;
@@ -34,7 +42,7 @@ contract SovStake is Ownable{
         priceFeed = AggregatorV3Interface(_priceFeed);
         // injecter l'address du token Dai à utiliser (Kovan)
         //dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
-        stakeToken = IERC20(_stakeToken);
+        //stakeToken = IERC20(_stakeToken);
         //rewardToken = IERC20(_stakeToken);
         ratio = 100;
     }
@@ -58,6 +66,7 @@ contract SovStake is Ownable{
         uint quantity = stakers[msg.sender];
         stakers[msg.sender] = 0;
         stakersDate[msg.sender] = 0;
+        tvl = tvl.sub(quantity);
         stakeToken.transfer(msg.sender, quantity);        
         emit TokenWithdrawn();
     }
@@ -71,7 +80,21 @@ contract SovStake is Ownable{
         stakersDate[staker] = block.timestamp;
         rewardToken.transfer(staker, rewards);
     }
-   
+
+    function getTVL() public view returns (uint) {
+        return tvl;
+    }   
+
+    function getMyTVL() public view returns (uint) {
+        return stakers[msg.sender];
+    }   
+
+    function faucet(address beneficiary) public onlyOwner {
+        require(stakeToken.balanceOf(msg.sender) > 100000000000000000000, "Not enought token");
+        stakeToken.transferFrom(msg.sender, beneficiary, 100000000000000000000);
+    }
+
+
     // Return latest price of DIA in ETH
     function getLatestPrice() public view returns (uint) {
         (
