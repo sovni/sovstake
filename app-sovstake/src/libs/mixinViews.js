@@ -1,5 +1,5 @@
 import BcExplorer from './BcExplorer'
-import VotingContract from '../../../build/contracts/SovStake.json';
+import SovStakeContract from '../../../build/contracts/SovStake.json';
 
 export default {
     data() {
@@ -29,7 +29,7 @@ export default {
                 window.bc = new BcExplorer;
 
                 // connecting to the blockchain and intializing the Users smart contract
-                window.bc.initWithContractJson(VotingContract, 'http://127.0.0.1:7545')
+                window.bc.initWithContractJson(SovStakeContract, 'http://127.0.0.1:7545')
                 .then((error) => {
                     // handling the connection error
                     if (error) {
