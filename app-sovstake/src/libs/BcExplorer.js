@@ -429,7 +429,19 @@ class BcExplorer {
         return this.web3().fromWei(bal, "ether");
     }
 
+    /**
+     * Tranform the balance from Wei to Ether
+     *
+     * @param {mixed} bal
+     * @return {numeric}
+     */
+    etherToWei(bal) {
+    if (typeof bal == 'object') {
+        bal = bal.toNumber();
+    }
 
+    return this.web3().toWei(bal, "ether");
+    }
 
     /**
      * Transform the parameter from bytes to string.

@@ -1,5 +1,7 @@
 import BcExplorer from './BcExplorer'
 import SovStakeContract from '../../../build/contracts/SovStake.json';
+import SovToken from '../../../build/contracts/SovToken.json';
+import Dai from '../../../build/contracts/Dai.json';
 
 export default {
     data() {
@@ -29,7 +31,7 @@ export default {
                 window.bc = new BcExplorer;
 
                 // connecting to the blockchain and intializing the Users smart contract
-                window.bc.initWithContractJson(SovStakeContract, 'http://127.0.0.1:7545')
+                window.bc.initWithContractJson(SovStakeContract, 'http://127.0.0.1:7545', 'SovStake')
                 .then((error) => {
                     // handling the connection error
                     if (error) {
@@ -39,17 +41,23 @@ export default {
                     } else {
                         this.bcConnectionError = false;
                         this.bcConnected = this.blockchainIsConnected();                        // calling a smart contract function in order to check the contract address
-                        // is correct. NOTE: here you might be connected successfully.
-                        // TODO: the check of the smart contract address validity it should be BcExplorer duty
-                        /*this.isRegistered()
-                        .then(res => {
-                            this.bcConnectionError = false;
-                            this.bcConnected = this.blockchainIsConnected();
+
+                        window.bc.initWithContractJson(SovToken, 'http://127.0.0.1:7545', 'SovToken')
+                        .then((error) => {
+                            if (error)
+                                console.log("Error init SovToken contract");
+                            else {
+                                console.log("SovToken contract initialised");
+                                window.bc.initWithContractJson(Dai, 'http://127.0.0.1:7545', 'Dai')
+                                .then((error) => {
+                                    if (error)
+                                        console.log("Error init Dai contract");
+                                    else {
+                                        console.log("Dai contract initialised");
+                                    }
+                                })
+                            }
                         })
-                        .catch(error => {
-                            this.showConnectionErrorMessage(error);
-                            this.bcSmartContractAddressError = true;
-                        });*/
                     }
                 })
                 .catch(error => this.showConnectionErrorMessage(error));

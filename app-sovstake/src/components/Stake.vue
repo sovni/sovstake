@@ -6,30 +6,6 @@
     <div class="p-mt-2">
      <Card>
         <template #title>
-          SOV
-        </template>
-        <template #content>
-          <div class="p-mt-4">
-            <Card>
-                <template #title>
-                  Wallet
-                </template>
-                <template #content>
-                  <h3>My Dai Token</h3>
-                  <InputNumber v-model="mytoken" />
-                  <form @submit.prevent="sendDaiToken">
-                    <InputText v-model="beneficiaryAddress" style="width:400px" type="text"/>
-                    <Button label="Send Token" @click="sendDaiToken()"/>
-                  </form>
-                </template>
-            </Card>    
-          </div>
-        </template>
-      </Card>
-    </div>            
-    <div class="p-mt-2">
-     <Card>
-        <template #title>
           DAI
         </template>
         <template #content>
@@ -57,11 +33,19 @@
                       <h3>My Wallet</h3>
                       <InputNumber v-model="wallet" />
                       <h3>Deposit</h3>
-                      <InputNumber v-model="deposit" />
-                      <Button label="Deposit" />
+                      <form @submit.prevent="deposit">
+                        <InputNumber v-model="deposit" />
+                        <Button label="Deposit" @click="depositToken()"/>
+                        <Button label="Allow" @click="allowDeposit()"/>
+                      </form>                      
+                      <InputNumber v-model="allowance" />
                     </TabPanel>
                     <TabPanel header="Withdraw">
-                      Content II
+                      <h3>Withdraw</h3>
+                      <form @submit.prevent="withdraw">
+                        <InputNumber v-model="withdraw" />
+                        <Button label="Withdraw" @click="withdrawToken()"/>
+                      </form>
                     </TabPanel>
                   </TabView>
                 </template>
@@ -100,10 +84,10 @@ export default {
       msg: 'Welcome to Your Vue.js Vote dApp',
       tvl: 0,
       mytvl: 0,
-      mytoken: 0,
       wallet: 0,
       deposit: 0,
-      beneficiaryAddress: '',
+      allowance:0,
+      withdraw: 0,
       tmoConn: null // contain the intervalID given by setInterval
     }
   },
@@ -115,14 +99,29 @@ export default {
         console.log("Info : " + window.bc.info.balance);
         console.log("Account : " + window.bc.info.mainAccount);
 
-        window.bc.contract().getTVL((err, value) => {
-          this.tvl = parseInt(value);
+        window.bc.contract('SovStake').getTVL((err, value) => {
+          this.tvl = parseInt(window.bc.weiToEther(value));
         });
 
-        window.bc.contract().getMyTVL((err, value) => {
-          this.mytvl = parseInt(value);
+        window.bc.contract('SovStake').getMyTVL({ from: window.bc.info.mainAccount }, (err, value) => {
+          console.log("My TVL :" + value);
+          this.mytvl = parseInt(window.bc.weiToEther(value));
         });
-                /*window.bc.contract().getVotingStatus((err, status) => {
+        window.bc.contract('SovStake').TokenStaked().watch((err, result) => {
+          console.log("Token staked success");
+        });
+        window.bc.contract('Dai').balanceOf(window.bc.info.mainAccount, (err, value) => {
+          console.log("Dai Token :" + value);
+          //this.wallet = window.bc.weiToEther(parseInt(value));
+          this.wallet = parseInt(window.bc.weiToEther(value));
+        });
+        console.log(window.bc.contract('Dai'));
+        window.bc.contract('Dai').allowance(window.bc.info.mainAccount,  window.bc.contract('SovToken').address, (err, value) => {
+          console.log("Dai Token :" + value);
+          //this.wallet = window.bc.weiToEther(parseInt(value));
+          this.allowance = parseInt(window.bc.weiToEther(value));
+        });
+          /*window.bc.contract().getVotingStatus((err, status) => {
           this.updateVotingStatus(status);
           this.statusList[status].icon = 'pi pi-circle-on';
           if (this.votingStatus == 0) {
@@ -170,27 +169,64 @@ export default {
         });*/
       }
     },
-    sendDaiToken() {
-      console.log("Send Token");
+    allowDeposit() {
+      console.log("Allow deposit : " + this.deposit);
 
       if (this.blockchainIsConnected()) {
         window.bc.getMainAccount()
         .then(account => {
-            console.log("benef " + this.beneficiaryAddress);
-            window.bc.contract().faucet(this.beneficiaryAddress, { from: account }, (error, txHash) => {
+            window.bc.contract('Dai').increaseAllowance(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
+                if (error) {
+                  this.msgStatus = "Error. Allowance refused";
+                  console.error(error);
+                }
+                else
+                  this.msgStatus = "increaseAllowance submitted";
+            });
+        })
+        .catch();
+        //.catch(error => reject(error));      
+      }
+    },
+    depositToken() {
+      console.log("Deposit Token : " + this.deposit);
+
+      if (this.blockchainIsConnected()) {
+        window.bc.getMainAccount()
+        .then(account => {
+            window.bc.contract('SovStake').stake(parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Check console logs";
                   console.error(error);
                 }
                 else
-                  this.msgStatus = "Faucet submitted";
-                //resolve(res);
+                  this.msgStatus = "stake submitted";
             });
         })
         .catch();
-        //.catch(error => reject(error));
-      }      
-    }
+        //.catch(error => reject(error));      
+      }
+    },
+    withdrawToken() {
+      console.log("Withdraw Token : " + this.deposit);
+
+      if (this.blockchainIsConnected()) {
+        window.bc.getMainAccount()
+        .then(account => {
+            //window.bc.contract('SovStake').withdraw(parseInt(window.bc.etherToWei(this.withdraw)), { from: account }, (error, txHash) => {
+            window.bc.contract('SovStake').withdraw({ from: account }, (error, txHash) => {
+                if (error) {
+                  this.msgStatus = "Error. Check console logs";
+                  console.error(error);
+                }
+                else
+                  this.msgStatus = "withdraw submitted";
+            });
+        })
+        .catch();
+        //.catch(error => reject(error));      
+      }
+    }    
   },
   created() {
       // it tries to get the user list from the blockchian once
