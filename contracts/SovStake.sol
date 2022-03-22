@@ -13,16 +13,8 @@ contract Dai is ERC20 {
     }
 }
 
-contract SovToken is ERC20 {
-    constructor() ERC20("SovToken", "SOV") {
-        _mint(msg.sender, 21000000000000000000000000);
-    }
-}
-
-
-contract SovStake is Ownable{
+contract SovStake is ERC20, Ownable {
     IERC20 stakeToken;
-    IERC20 rewardToken;
 
     mapping(address => uint) private stakers;
     mapping(address => uint) private stakersDate;
@@ -35,14 +27,18 @@ contract SovStake is Ownable{
 
     using SafeMath for uint;
 
-    constructor(address _rewardToken, address _stakeToken) {//}, address _priceFeed) {
+    constructor() ERC20("SovToken", "SOV") {
+        //_mint(msg.sender, 21000000000000000000000000);
+    }
+
+    function addStakableToken(address _stakeToken) public onlyOwner {//}, address _priceFeed) {
         // DAI/ETH price Feed on Kovan testnet
         //priceFeed = AggregatorV3Interface(0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D);
         //priceFeed = AggregatorV3Interface(_priceFeed);
         // injecter l'address du token Dai à utiliser (Kovan)
         //dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
         stakeToken = IERC20(_stakeToken);
-        rewardToken = IERC20(_rewardToken);
+        //rewardToken = IERC20(_rewardToken);
         ratio = 100;
     }
 
@@ -67,7 +63,7 @@ contract SovStake is Ownable{
         stakers[msg.sender] = 0;
         stakersDate[msg.sender] = 0;
         tvl = tvl.sub(quantity);
-        stakeToken.transferFrom(address(this), msg.sender, quantity);        
+        stakeToken.transfer(msg.sender, quantity);        
         emit TokenWithdrawn();
     }
 
@@ -75,10 +71,10 @@ contract SovStake is Ownable{
         require(stakers[staker] > 0, "No staked token.");
         require(stakersDate[staker] != 0, "No stake date registered.");
 
-        uint rewards = 10;//(getLatestPrice().mul(stakers[staker])) * (block.timestamp - stakersDate[staker]) / ratio;
+        uint rewards = 10000000000000000000;//(getLatestPrice().mul(stakers[staker])) * (block.timestamp - stakersDate[staker]) / ratio;
 
         stakersDate[staker] = block.timestamp;
-        rewardToken.transferFrom(address(this), staker, rewards);
+        _mint(staker, rewards);
     }
 
     function getTVL() public view returns (uint) {
