@@ -116,7 +116,7 @@ export default {
           this.wallet = parseInt(window.bc.weiToEther(value));
         });
         console.log(window.bc.contract('Dai'));
-        window.bc.contract('Dai').allowance(window.bc.info.mainAccount,  window.bc.contract('SovToken').address, (err, value) => {
+        window.bc.contract('Dai').allowance(window.bc.info.mainAccount,  window.bc.contract('SovStake').address, (err, value) => {
           console.log("Dai Token :" + value);
           //this.wallet = window.bc.weiToEther(parseInt(value));
           this.allowance = parseInt(window.bc.weiToEther(value));
