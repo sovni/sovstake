@@ -19,6 +19,7 @@ contract SovStake is ERC20, Ownable {
         address aggregator;
         bool enabled;
         uint tvl;
+        AggregatorV3Interface priceFeed;
         mapping(address => uint) stakers;
         mapping(address => uint) stakersDate;
     }
@@ -46,6 +47,8 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].name = name;
         stakeTokens[token].aggregator = aggregator;
         stakeTokens[token].enabled = true;
+        //stakeTokens[token].priceFeed = AggregatorV3Interface(aggregator);
+
         tokenArray.push(token);
     }
 
@@ -59,17 +62,9 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].enabled = false;
     }
 
-    /*function addStakableToken(address _stakeToken) public onlyOwner {//}, address _priceFeed) {
-        // DAI/ETH price Feed on Kovan testnet
-        //priceFeed = AggregatorV3Interface(0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D);
-        //priceFeed = AggregatorV3Interface(_priceFeed);
-        // injecter l'address du token Dai à utiliser (Kovan)
-        //dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
-        stakeToken = IERC20(_stakeToken);
-        //rewardToken = IERC20(_rewardToken);
-        ratio = 100;
-    }*/
-
+    function getTokenAddress()public view returns( address  [] memory){
+        return tokenArray;
+    }
 
     function stake(address token, uint quantity) public {
         require(token != address(0), "token with zero address not allowed");
