@@ -28,6 +28,12 @@ contract("SovStake", accounts => {
         assert.equal(name, "DAI", "Token name should be set to DAI");
     });
 
+    it("...check list of tokens", async () => {
+        let tokens = await sovStakeInstance.getTokenArray();
+        let res = [daiInstance.address];
+        assert.equal(tokens[0], res[0], "Token list should be not empty");
+    });
+
     it("...set allowance", async () => {
         const status = await daiInstance.increaseAllowance(sovStakeInstance.address, web3.utils.toWei("100", "ether"), {from: address });
         let allowance = await daiInstance.allowance(address, sovStakeInstance.address);

@@ -27,7 +27,6 @@ contract SovStake is ERC20, Ownable {
     mapping(address => stakableToken) private stakeTokens;
     address[] private tokenArray;
 
-    //AggregatorV3Interface internal priceFeed;
     uint private ratio;
 
     event TokenStaked();
@@ -62,7 +61,7 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].enabled = false;
     }
 
-    function getTokenAddress()public view returns( address  [] memory){
+    function getTokenArray()public view returns( address  [] memory){
         return tokenArray;
     }
 
