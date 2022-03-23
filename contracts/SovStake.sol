@@ -16,10 +16,19 @@ contract Dai is ERC20 {
 contract SovStake is ERC20, Ownable {
     IERC20 stakeToken;
 
-    mapping(address => uint) private stakers;
-    mapping(address => uint) private stakersDate;
+    struct stakableToken {
+        string name;
+        address aggregator;
+        bool enabled;
+        uint tvl;
+        mapping(address => uint) stakers;
+        mapping(address => uint) stakersDate;
+    }
+
+    mapping(address => stakableToken) private stakeTokens;
+    address[] private tokenArray;
+
     //AggregatorV3Interface internal priceFeed;
-    uint private tvl;
     uint private ratio;
 
     event TokenStaked();
@@ -31,7 +40,23 @@ contract SovStake is ERC20, Ownable {
         //_mint(msg.sender, 21000000000000000000000000);
     }
 
-    function addStakableToken(address _stakeToken) public onlyOwner {//}, address _priceFeed) {
+    function addStakableToken(address token, string memory name, address aggregator) public onlyOwner {
+        require(token != address(0), "token with zero address not allowed");
+        require(aggregator != address(0), "aggregator cannot be a zero address");
+        //require(name.length != 0, "token name cannot be empty");
+
+        stakeTokens[token].name = name;
+        stakeTokens[token].aggregator = aggregator;
+        stakeTokens[token].enabled = true;
+        tokenArray.push(token);
+    }
+
+    function disableStakableToken(address token) public onlyOwner {
+        require(token != address(0), "token with zero address not allowed");
+        stakeTokens[token].enabled = false;
+    }
+
+    /*function addStakableToken(address _stakeToken) public onlyOwner {//}, address _priceFeed) {
         // DAI/ETH price Feed on Kovan testnet
         //priceFeed = AggregatorV3Interface(0x74825DbC8BF76CC4e9494d0ecB210f676Efa001D);
         //priceFeed = AggregatorV3Interface(_priceFeed);
@@ -40,49 +65,53 @@ contract SovStake is ERC20, Ownable {
         stakeToken = IERC20(_stakeToken);
         //rewardToken = IERC20(_rewardToken);
         ratio = 100;
-    }
+    }*/
 
 
-    function stake(uint quantity) public {
-        if (stakers[msg.sender] > 0 && stakersDate[msg.sender] > 0) {
-            computeRewards(msg.sender);
+    function stake(address token, uint quantity) public {
+        require(token != address(0), "token with zero address not allowed");
+        //require(stakeTokens[token].name.length != 0, "Not possible to stake this token");
+        require(stakeTokens[token].enabled != true, "Stake of this token is disabled");
+
+        if (stakeTokens[token].stakers[msg.sender] > 0 && stakeTokens[token].stakersDate[msg.sender] > 0) {
+            computeRewards(token, msg.sender);
         }
-        stakers[msg.sender] =  stakers[msg.sender].add(quantity);
-        tvl = tvl.add(quantity);
-        stakersDate[msg.sender] = block.timestamp;
-        stakeToken.transferFrom(msg.sender, address(this), quantity);
+        stakeTokens[token].stakers[msg.sender] =  stakeTokens[token].stakers[msg.sender].add(quantity);
+        stakeTokens[token].tvl = stakeTokens[token].tvl.add(quantity);
+        stakeTokens[token].stakersDate[msg.sender] = block.timestamp;
+        ERC20(token).transferFrom(msg.sender, address(this), quantity);
         emit TokenStaked();
     }
 
-    function withdraw() public {
-        require(stakers[msg.sender] > 0, "No staked token.");
-        require(stakersDate[msg.sender] != 0, "No stake date registered.");
+    function withdraw(address token) public {
+        require(stakeTokens[token].stakers[msg.sender] > 0, "No staked token.");
+        require(stakeTokens[token].stakersDate[msg.sender] != 0, "No stake date registered.");
         
-        computeRewards(msg.sender);
-        uint quantity = stakers[msg.sender];
-        stakers[msg.sender] = 0;
-        stakersDate[msg.sender] = 0;
-        tvl = tvl.sub(quantity);
-        stakeToken.transfer(msg.sender, quantity);        
+        computeRewards(token, msg.sender);
+        uint quantity = stakeTokens[token].stakers[msg.sender];
+        stakeTokens[token].stakers[msg.sender] = 0;
+        stakeTokens[token].stakersDate[msg.sender] = 0;
+        stakeTokens[token].tvl = stakeTokens[token].tvl.sub(quantity);
+        ERC20(token).transfer(msg.sender, quantity);        
         emit TokenWithdrawn();
     }
 
-    function computeRewards(address staker) private {
-        require(stakers[staker] > 0, "No staked token.");
-        require(stakersDate[staker] != 0, "No stake date registered.");
+    function computeRewards(address token, address staker) private {
+        require(stakeTokens[token].stakers[staker] > 0, "No staked token.");
+        require(stakeTokens[token].stakersDate[staker] != 0, "No stake date registered.");
 
         uint rewards = 10000000000000000000;//(getLatestPrice().mul(stakers[staker])) * (block.timestamp - stakersDate[staker]) / ratio;
 
-        stakersDate[staker] = block.timestamp;
+        stakeTokens[token].stakersDate[staker] = block.timestamp;
         _mint(staker, rewards);
     }
 
-    function getTVL() public view returns (uint) {
-        return tvl;
+    function getTVL(address token) public view returns (uint) {
+        return stakeTokens[token].tvl;
     }   
 
-    function getMyTVL() public view returns (uint) {
-        return stakers[msg.sender];
+    function getMyTVL(address token) public view returns (uint) {
+        return stakeTokens[token].stakers[msg.sender];
     }   
 
     // Return latest price of DIA in ETH
