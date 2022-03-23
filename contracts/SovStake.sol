@@ -14,8 +14,6 @@ contract Dai is ERC20 {
 }
 
 contract SovStake is ERC20, Ownable {
-    IERC20 stakeToken;
-
     struct stakableToken {
         string name;
         address aggregator;
@@ -51,6 +49,11 @@ contract SovStake is ERC20, Ownable {
         tokenArray.push(token);
     }
 
+    function getTokenName(address token) public view returns (string memory) {
+        require(token != address(0), "token with zero address not allowed");
+        return stakeTokens[token].name;
+}
+
     function disableStakableToken(address token) public onlyOwner {
         require(token != address(0), "token with zero address not allowed");
         stakeTokens[token].enabled = false;
@@ -71,7 +74,7 @@ contract SovStake is ERC20, Ownable {
     function stake(address token, uint quantity) public {
         require(token != address(0), "token with zero address not allowed");
         //require(stakeTokens[token].name.length != 0, "Not possible to stake this token");
-        require(stakeTokens[token].enabled != true, "Stake of this token is disabled");
+        require(stakeTokens[token].enabled != false, "Stake of this token is disabled");
 
         if (stakeTokens[token].stakers[msg.sender] > 0 && stakeTokens[token].stakersDate[msg.sender] > 0) {
             computeRewards(token, msg.sender);
