@@ -22,6 +22,12 @@ contract("SovStake", accounts => {
         assert.equal(balance, web3.utils.toWei("1000", "ether"), "balance of token should be equal");
     });
 
+    it("...Add DAI stakable tokens", async () => {
+        await sovStakeInstance.addStakableToken(daiInstance.address, "DAI", daiInstance.address);
+        let name = await sovStakeInstance.getTokenName(daiInstance.address);
+        assert.equal(name, "DAI", "Token name should be set to DAI");
+    });
+
     it("...set allowance", async () => {
         const status = await daiInstance.increaseAllowance(sovStakeInstance.address, web3.utils.toWei("100", "ether"), {from: address });
         let allowance = await daiInstance.allowance(address, sovStakeInstance.address);
@@ -29,15 +35,14 @@ contract("SovStake", accounts => {
     });
 
     it("...stake tokens", async () => {
-        await sovStakeInstance.addStakableToken(daiInstance.address);
-        const status = await sovStakeInstance.stake(web3.utils.toWei("100", "ether"), {from: address });
-        let tvl = await sovStakeInstance.getMyTVL({from: address });
+        const status = await sovStakeInstance.stake(daiInstance.address, web3.utils.toWei("100", "ether"), {from: address });
+        let tvl = await sovStakeInstance.getMyTVL(daiInstance.address, {from: address });
         assert.equal(tvl, web3.utils.toWei("100", "ether"), "tvl should be equal to stake value ");
     });
 
     it("...withdraw tokens", async () => {
-        const status = await sovStakeInstance.withdraw({from: address });
-        let tvl = await sovStakeInstance.getMyTVL({from: address });
+        const status = await sovStakeInstance.withdraw(daiInstance.address, {from: address });
+        let tvl = await sovStakeInstance.getMyTVL(daiInstance.address, {from: address });
         assert.equal(tvl, web3.utils.toWei("0", "ether"), "tvl should be equal to zero ");
     });
     
