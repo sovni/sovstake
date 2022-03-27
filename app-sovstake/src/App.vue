@@ -1,5 +1,6 @@
 <template>
     <div>
+        <Header style="max-width:1000px;margin: auto;"/>
         <h2 v-show="!bcConnected && !bcConnectionError">
             Connecting...
         </h2>
@@ -34,10 +35,14 @@
 <script>
 // importing common function
 import mixin from './libs/mixinViews';
+import Header from './components/Header'
 
 export default {
     mixins: [mixin],
-    name: 'App'
+    name: 'App',
+    components: {
+        Header
+    }
 };
 
 </script>
