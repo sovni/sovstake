@@ -1,11 +1,11 @@
 <template>
-   <header>
+    <div>
       <Menubar :model="items" >
          <template #end>
             {{ getMainAccount() }}
          </template>
       </Menubar>
-   </header>
+    </div>
 </template>
 
 <script>
@@ -21,18 +21,18 @@
                {
                    label:'Home',
                    icon:'pi pi-fw pi-home',
-                   to:'/'
+                   to:'/',
                },               
                {
                    label:'Stake',
-                   icon:'pi pi-fw pi-home',
+                   icon:'pi pi-fw pi-lock',
                    to:'/stake'
                }, 
                {
                    label:'Admin',
-                   icon:'pi pi-fw pi-home',
+                   icon:'pi pi-fw pi-cog',
                    to:'/admin'
-               },
+               }
             ]
         }
       },    

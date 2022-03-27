@@ -1,6 +1,5 @@
 import BcExplorer from './BcExplorer'
 import SovStakeContract from '../../../build/contracts/SovStake.json';
-import ERC20 from '../../../build/contracts/ERC20.json';
 import Dai from '../../../build/contracts/Dai.json';
 
 export default {
@@ -42,22 +41,14 @@ export default {
                         this.bcConnectionError = false;
                         this.bcConnected = this.blockchainIsConnected();                        // calling a smart contract function in order to check the contract address
 
-                        //window.bc.initWithContractJson(ERC20, 'http://127.0.0.1:7545', 'ERC20')
-                        //.then((error) => {
-                        //    if (error)
-                        //        console.log("Error init ERC20 contract");
-                        //    else {
-                                console.log("ERC20 contract initialised");
-                                window.bc.initWithContractJson(Dai, 'http://127.0.0.1:7545', 'Dai')
-                                .then((error) => {
-                                    if (error)
-                                        console.log("Error init Dai contract");
-                                    else {
-                                        console.log("Dai contract initialised");
-                                    }
-                                })
-                        //    }
-                        //})
+                            window.bc.initWithContractJson(Dai, 'http://127.0.0.1:7545', 'Dai')
+                            .then((error) => {
+                                if (error)
+                                    console.log("Error init Dai contract");
+                                else {
+                                    console.log("Dai contract initialised");
+                                }
+                            })
                     }
                 })
                 .catch(error => this.showConnectionErrorMessage(error));

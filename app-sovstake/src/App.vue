@@ -1,6 +1,8 @@
 <template>
     <div>
+        <div>
         <Header style="max-width:1000px;margin: auto;"/>
+        </div>
         <h2 v-show="!bcConnected && !bcConnectionError">
             Connecting...
         </h2>
@@ -29,6 +31,7 @@
                 <li>The compiled smart contract <b>app-users/src/assets/Users.json</b> is equal to <b>build/Users.json</b>.</li>
             </ul>
         </div>
+        <Toast group="bottom-right" position="bottom-right"  />
     </div>
 </template>
 
@@ -36,12 +39,14 @@
 // importing common function
 import mixin from './libs/mixinViews';
 import Header from './components/Header'
+import Toast from 'primevue/toast';
 
 export default {
     mixins: [mixin],
     name: 'App',
     components: {
-        Header
+        Header,
+        Toast
     }
 };
 

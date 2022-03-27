@@ -34,6 +34,8 @@ export default {
     waitContractInit() {
       if (this.blockchainIsConnected()) {
         clearInterval(this.tmoConn);
+        this.$toast.add({severity:'success', summary: 'Wallet connected', group: "bottom-right", life: 3000});
+
         console.log("Info : " + window.bc.info.balance);
         console.log("Account : " + window.bc.info.mainAccount);
         //console.log("Owner : "+ window.bc.contract('SovStake').owner());
