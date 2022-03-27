@@ -1,18 +1,15 @@
 const SovStake = artifacts.require("SovStake");
-//const SovToken = artifacts.require("SovToken");
 const Dai = artifacts.require("Dai");
 const truffleAssert = require('truffle-assertions');
 
 contract("SovStake", accounts => {
     let sovStakeInstance;
-    //let sovTokenInstance;
     let daiInstance;
     let ownerAddress = accounts[0];
     let address  = accounts[1];
 
     beforeEach(async () => {
         sovStakeInstance = await SovStake.deployed();
-        //sovTokenInstance = await SovToken.deployed();
         daiInstance = await Dai.deployed();
     })    
 
@@ -56,7 +53,12 @@ contract("SovStake", accounts => {
         let reward = await sovStakeInstance.balanceOf(address);
         assert.equal(reward, web3.utils.toWei("10", "ether"), "tvl should be equal to 10 but " + reward.toString());
     });
-    
+
+    it("...disable stakable token", async () => {
+        await sovStakeInstance.disableStakableToken(address);
+        await truffleAssert.fails(sovStakeInstance.stake(daiInstance.address, web3.utils.toWei("100", "ether"), {from: address }));
+    });    
+
     /*it("...start proposal registration phase should not be allowed if no voters regsitered", async () => {
         await truffleAssert.fails(votingInstance.startProposalsRegistration({ from:ownerAddress }));
     });
