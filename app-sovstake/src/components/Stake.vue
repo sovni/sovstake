@@ -26,7 +26,7 @@ export default {
     return {
       msg: 'Sov stake',
       tokenArray: [],
-      tmoConn: null // contain the intervalID given by setInterval
+      //tmoConn: null // contain the intervalID given by setInterval
     }
   },
 

@@ -47,9 +47,18 @@ export default {
     components: {
         Header,
         Toast
-    }
-};
+    },
+    data () {
+        return {
+        }
+    },
+  methods: {
 
+  },
+    created() {
+
+    }
+}
 </script>
 
 <style>
