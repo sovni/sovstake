@@ -23,22 +23,26 @@ contract SovStake is ERC20, Ownable {
         mapping(address => uint) stakers;
         mapping(address => uint) stakersDate;
     }
-
+    mapping(address => bool) private privileged;
     mapping(address => stakableToken) private stakeTokens;
     address[] private tokenArray;
 
     uint private ratio;
 
-    event TokenStaked();
-    event TokenWithdrawn();
+    event TokenStaked(address staker, uint quantity);
+    event TokenWithdrawn(address staker);
+    event TokenAdded(address token);
+    event RatioChanged(uint ratio);
+    event RewardsSent(address staker, uint rewards);
 
     using SafeMath for uint;
 
     constructor() ERC20("SovToken", "SOV") {
         //_mint(msg.sender, 21000000000000000000000000);
+        privileged[owner()] = true;
     }
 
-    function addStakableToken(address token, string memory name, address aggregator) public onlyOwner {
+    function addStakableToken(address token, string memory name, address aggregator) public onlyPrivileged {
         require(token != address(0), "token with zero address not allowed");
         require(aggregator != address(0), "aggregator cannot be a zero address");
         require(stakeTokens[token].aggregator == address(0), "token already existing");
@@ -50,14 +54,11 @@ contract SovStake is ERC20, Ownable {
         //stakeTokens[token].priceFeed = AggregatorV3Interface(aggregator);
 
         tokenArray.push(token);
+
+        emit TokenAdded(token);
     }
 
-    function getTokenName(address token) public view returns (string memory) {
-        require(token != address(0), "token with zero address not allowed");
-        return stakeTokens[token].name;
-}
-
-    function disableStakableToken(address token) public onlyOwner {
+    function disableStakableToken(address token) public onlyPrivileged {
         require(token != address(0), "token with zero address not allowed");
         stakeTokens[token].enabled = false;
     }
@@ -66,9 +67,23 @@ contract SovStake is ERC20, Ownable {
         return tokenArray;
     }
 
+    function getTokenName(address token) public view returns (string memory) {
+        require(token != address(0), "token with zero address not allowed");
+        return stakeTokens[token].name;
+    }
+
+    function getRatio()public view returns(uint){
+        return ratio;
+    }
+
+    function setRatio(uint value) public onlyPrivileged {
+        require(value != 0, "ratio cannot be 0");
+        ratio = value;
+        emit RatioChanged(ratio);
+    }
+
     function stake(address token, uint quantity) public {
         require(token != address(0), "token with zero address not allowed");
-        //require(stakeTokens[token].name.length != 0, "Not possible to stake this token");
         require(stakeTokens[token].enabled != false, "Stake of this token is disabled");
 
         if (stakeTokens[token].stakers[msg.sender] > 0 && stakeTokens[token].stakersDate[msg.sender] > 0) {
@@ -78,7 +93,7 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].tvl = stakeTokens[token].tvl.add(quantity);
         stakeTokens[token].stakersDate[msg.sender] = block.timestamp;
         ERC20(token).transferFrom(msg.sender, address(this), quantity);
-        emit TokenStaked();
+        emit TokenStaked(msg.sender, quantity);
     }
 
     function withdraw(address token) public {
@@ -91,17 +106,18 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].stakersDate[msg.sender] = 0;
         stakeTokens[token].tvl = stakeTokens[token].tvl.sub(quantity);
         ERC20(token).transfer(msg.sender, quantity);        
-        emit TokenWithdrawn();
+        emit TokenWithdrawn(msg.sender);
     }
 
     function computeRewards(address token, address staker) private {
         require(stakeTokens[token].stakers[staker] > 0, "No staked token.");
         require(stakeTokens[token].stakersDate[staker] != 0, "No stake date registered.");
 
-        uint rewards = 10000000000000000000;//(getLatestPrice().mul(stakers[staker])) * (block.timestamp - stakersDate[staker]) / ratio;
+        uint rewards = (getLatestPrice(token).mul(stakeTokens[token].stakers[staker])) * (block.timestamp - stakeTokens[token].stakersDate[staker]) / ratio;
 
         stakeTokens[token].stakersDate[staker] = block.timestamp;
         _mint(staker, rewards);
+        emit RewardsSent(staker, rewards);
     }
 
     function getTVL(address token) public view returns (uint) {
@@ -112,15 +128,19 @@ contract SovStake is ERC20, Ownable {
         return stakeTokens[token].stakers[msg.sender];
     }   
 
-    // Return latest price of DIA in ETH
-    /*function getLatestPrice() public view returns (uint) {
-        (
-            uint80 roundID, 
-            int price,
-            uint startedAt,
-            uint timeStamp,
-            uint80 answeredInRound
-        ) = priceFeed.latestRoundData();
+    function updatePrivileged(address account, bool enabled) public onlyOwner {
+        privileged[account] = enabled;
+    }
+
+    modifier onlyPrivileged() {
+        require(privileged[_msgSender()] == true, "Caller is not privileged");
+        _;
+    }
+    // Return latest price of Token in ETH
+    function getLatestPrice(address token) public view returns (uint) {
+        int price;
+        price = 1;//stakeTokens[token].priceFeed.latestRoundData();
+ 
         return uint(price);
-    }*/
+    }
 }

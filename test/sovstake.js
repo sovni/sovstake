@@ -39,6 +39,9 @@ contract("SovStake", accounts => {
 
     it("...stake tokens", async () => {
         const status = await sovStakeInstance.stake(daiInstance.address, web3.utils.toWei("100", "ether"), {from: address });
+        truffleAssert.eventEmitted(tx, 'TokenStaked', (ev) => {
+            return ev.staker == address && ev.quantity == web3.utils.toWei("100", "ether");
+        });
         let tvl = await sovStakeInstance.getMyTVL(daiInstance.address, {from: address });
         assert.equal(tvl, web3.utils.toWei("100", "ether"), "tvl should be equal to stake value ");
     });
