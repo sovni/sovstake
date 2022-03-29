@@ -68,7 +68,7 @@ contract("SovStake", accounts => {
     });
 
     it("...disable stakable token", async () => {
-        await sovStakeInstance.disableStakableToken(address);
+        await sovStakeInstance.updateTokenStatus(address, false);
         await truffleAssert.fails(sovStakeInstance.stake(daiInstance.address, web3.utils.toWei("100", "ether"), {from: address }));
     });    
 

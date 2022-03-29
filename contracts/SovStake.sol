@@ -32,6 +32,7 @@ contract SovStake is ERC20, Ownable {
     event TokenStaked(address staker, uint quantity);
     event TokenWithdrawn(address staker);
     event TokenAdded(address token);
+    event TokenStatusChanged(address token, bool enabled);
     event RatioChanged(uint ratio);
     event RewardsSent(address staker, uint rewards);
 
@@ -59,9 +60,10 @@ contract SovStake is ERC20, Ownable {
         emit TokenAdded(token);
     }
 
-    function disableStakableToken(address token) public onlyPrivileged {
+    function updateTokenStatus(address token, bool status) public onlyPrivileged {
         require(token != address(0), "token with zero address not allowed");
-        stakeTokens[token].enabled = false;
+        stakeTokens[token].enabled = status;
+        emit TokenStatusChanged(token, status);
     }
 
     function getTokenArray()public view returns( address  [] memory){
@@ -73,6 +75,10 @@ contract SovStake is ERC20, Ownable {
         return stakeTokens[token].name;
     }
 
+    function getTokenStatus(address token) public view returns (bool) {
+        require(token != address(0), "token with zero address not allowed");
+        return stakeTokens[token].enabled;
+    }
     function getTokenAggregator(address token) public view returns (address) {
         require(token != address(0), "token with zero address not allowed");
         return stakeTokens[token].aggregator;

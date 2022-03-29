@@ -19,7 +19,7 @@
                     <label for="tokenAggreg">Aggregator</label>
                 </span>
                 </div>
-                <Button label="Add Stakable Token" @click="addToken()"/>
+                <Button label="Add Stakable Token" @click="addStackableToken()"/>
             </form>
         <div class="p-flex-column p-m-12 p-mt-2">                       
             <DataTable :value="tokens" class="p-datatable-sm" responsiveLayout="scroll" autoLayout>
@@ -27,6 +27,12 @@
                 <Column field="address" header="Address"></Column>
                 <Column field="tvl" header="Tvl"></Column>
                 <Column field="enabled" header="Enabled"></Column>
+                <Column header="Status">
+                    <template #body="slotProps">
+                        <Button v-if="slotProps.data.enabled == '1'" icon="pi pi-play" v-tooltip="'Disable'" class="p-button-rounded p-button-text p-button-success p-button-sm" @click="disableToken(slotProps.data.address)" />
+                        <Button v-if="slotProps.data.enabled != '1'" icon="pi pi-pause" v-tooltip="'Enable'" class="p-button-rounded p-button-text p-button-danger p-button-sm" @click="enableToken(slotProps.data.address)" />
+                    </template>
+                </Column>
             </DataTable>
         </div>
     </div>
@@ -38,6 +44,7 @@ import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText  from 'primevue/inputtext';
+import Tooltip from 'primevue/tooltip';
 
 export default {
   name: 'Admin',
@@ -48,7 +55,10 @@ export default {
     InputText,
     Button
   },
-  data () {
+       directives: {
+         'tooltip': Tooltip
+      },
+ data () {
     return {
       tokens: [],
       tokenName: '',
@@ -63,7 +73,7 @@ export default {
         if (this.blockchainIsConnected()) {
             window.bc.getMainAccount()
             .then(account => {
-                window.bc.contract('SovStake').addStackableToken(this.tokenAddress, this.tokenName, this.tokenAggreg, { from: account }, (error, txHash) => {
+                window.bc.contract('SovStake').addStakableToken(this.tokenAddress, this.tokenName, this.tokenAggreg, { from: account }, (error, txHash) => {
                     if (error) {
                         console.error(error);
                     }
@@ -75,6 +85,36 @@ export default {
             //.catch(error => reject(error));      
         }
     },
+    disableToken(token) {
+        if (this.blockchainIsConnected()) {
+            window.bc.getMainAccount()
+            .then(account => {
+                window.bc.contract('SovStake').updateTokenStatus(token, false, { from: account }, (error, txHash) => {
+                    if (error) {
+                        console.error(error);
+                    }
+                    else
+                        this.initTokenList();
+                });
+            })
+            .catch();
+        }
+    },
+    enableToken(token) {
+        if (this.blockchainIsConnected()) {
+            window.bc.getMainAccount()
+            .then(account => {
+                window.bc.contract('SovStake').updateTokenStatus(token, true, { from: account }, (error, txHash) => {
+                    if (error) {
+                        console.error(error);
+                    }
+                    else
+                        this.initTokenList();
+                });
+            })
+            .catch();
+        }
+    },
     initTokenList() {
       this.tokens=[];
       let contract = window.bc.contract('SovStake');
@@ -82,9 +122,11 @@ export default {
         tokenArray.forEach((item, index) => {
           contract.getTokenName(item, (err, name) => {
             contract.getTVL(item, (err, tvl) => {
-              tvl = parseInt(window.bc.weiToEther(tvl));
-              console.log("item " + item);
-              this.tokens.push({"code":name, "address":item, "tvl":tvl, "enabled":"1"});
+              contract.getTokenStatus(item, (err, status) => {
+                tvl = parseInt(window.bc.weiToEther(tvl));
+                console.log("item " + item);
+                this.tokens.push({"code":name, "address":item, "tvl":tvl, "enabled":status});
+              });
             });
           });
         });
@@ -97,6 +139,14 @@ export default {
         this.$toast.add({severity:'success', summary: 'Wallet connected', group: "bottom-right", life: 3000});
 
         this.initTokenList();
+
+        window.bc.contract('SovStake').TokenAdded().watch((err, result) => {
+            console.log("new token added : " + result.args.token);
+            this.initTokenList();
+        });
+        window.bc.contract('SovStake').TokenStatusChanged().watch((err, result) => {
+            this.initTokenList();
+        });
       }
     }
   },
