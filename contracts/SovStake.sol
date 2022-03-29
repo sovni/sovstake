@@ -40,13 +40,14 @@ contract SovStake is ERC20, Ownable {
     constructor() ERC20("SovToken", "SOV") {
         //_mint(msg.sender, 21000000000000000000000000);
         privileged[owner()] = true;
+        ratio =100;
     }
 
     function addStakableToken(address token, string memory name, address aggregator) public onlyPrivileged {
         require(token != address(0), "token with zero address not allowed");
         require(aggregator != address(0), "aggregator cannot be a zero address");
         require(stakeTokens[token].aggregator == address(0), "token already existing");
-        //require(name.length != 0, "token name cannot be empty");
+        require(bytes(name).length > 0, "token name cannot be empty");
 
         stakeTokens[token].name = name;
         stakeTokens[token].aggregator = aggregator;
@@ -70,6 +71,11 @@ contract SovStake is ERC20, Ownable {
     function getTokenName(address token) public view returns (string memory) {
         require(token != address(0), "token with zero address not allowed");
         return stakeTokens[token].name;
+    }
+
+    function getTokenAggregator(address token) public view returns (address) {
+        require(token != address(0), "token with zero address not allowed");
+        return stakeTokens[token].aggregator;
     }
 
     function getRatio()public view returns(uint){
@@ -107,6 +113,15 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].tvl = stakeTokens[token].tvl.sub(quantity);
         ERC20(token).transfer(msg.sender, quantity);        
         emit TokenWithdrawn(msg.sender);
+    }
+
+    function calculateRewards(address token, address staker) public view returns (uint) {
+        require(stakeTokens[token].stakers[staker] > 0, "No staked token.");
+        require(stakeTokens[token].stakersDate[staker] != 0, "No stake date registered.");
+        
+        uint rewards = (getLatestPrice(token).mul(stakeTokens[token].stakers[staker])) * (block.timestamp - stakeTokens[token].stakersDate[staker]) / ratio;
+
+        return rewards;
     }
 
     function computeRewards(address token, address staker) private {
