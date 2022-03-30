@@ -119,6 +119,7 @@ export default {
       this.tokens=[];
       let contract = window.bc.contract('SovStake');
       contract.getTokenArray((error, tokenArray) => {
+          console.log("array = " + tokenArray);
         tokenArray.forEach((item, index) => {
           contract.getTokenName(item, (err, name) => {
             contract.getTVL(item, (err, tvl) => {
@@ -142,9 +143,10 @@ export default {
 
         window.bc.contract('SovStake').TokenAdded().watch((err, result) => {
             console.log("new token added : " + result.args.token);
-            this.initTokenList();
+            //this.initTokenList();
         });
         window.bc.contract('SovStake').TokenStatusChanged().watch((err, result) => {
+            console.log("toekn status changed " + result.args.token);
             this.initTokenList();
         });
       }

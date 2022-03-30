@@ -1,12 +1,13 @@
 <template>
   <div class="p-flex-column p-m-2">
     <div class="p-mt-4">
-      <Card style="width:400px;height:400px;">
+      <Card style="width:400px;height:450px;">
           <template #title>
             Token Name : {{tokenName}}
           </template>
           <template #content>
             <h3>My TVL : {{mytvl}}</h3>
+            <h3>Rewards ongoing : {{rewards}}</h3>
             <TabView>
               <TabPanel header="Deposit">
                 <h3>My Wallet : {{wallet}}</h3>
@@ -62,6 +63,7 @@ export default {
       wallet: 0,
       deposit: 2000,
       allowance:0,
+      rewards: 0,
       deposit_requested: false,
       withdraw: 0,
       tokenContract: null,
@@ -76,28 +78,54 @@ export default {
         console.log("Info : " + window.bc.info.balance);
         console.log("Account : " + window.bc.info.mainAccount);
 
+        this.tokenContract = this.getERC20Contract();
+        this.updateInfos();
+
+        window.bc.contract('SovStake').TokenStaked().watch((err, result) => {
+          console.log("Token staked success");
+          this.updateInfos();
+        });
+
+        this.tokenContract.Approval().watch((err, result) => {
+          if (err) {
+            console.log('Could not approve increaseAllowance');
+          }
+          else {
+            console.log("Approval event received ");
+            console.log("   value   :" + result.args.value);
+            console.log("   owner   :" + result.args.owner);
+            console.log("   spender :" + result.args.spender);
+            console.log("   sov     :" + window.bc.contract('SovStake').address);
+            if (this.depositRequested) {
+              this.depositRequested = false;
+              this.depositToken();
+            }
+          }
+        });
+      }
+    },
+    updateInfos() {
+
         window.bc.contract('SovStake').getTokenName(this.mytoken, (err, value) => {
             this.tokenName = value;
         });
-
 
         window.bc.contract('SovStake').getTVL(this.mytoken, (err, value) => {
           this.tvl = parseInt(window.bc.weiToEther(value));
         });
 
-
         window.bc.contract('SovStake').getMyTVL(this.mytoken, { from: window.bc.info.mainAccount }, (err, value) => {
           console.log("My TVL :" + value);
           this.mytvl = parseInt(window.bc.weiToEther(value));
+
+          if (this.mytvl > 0) {
+            window.bc.contract('SovStake').calculateRewards(this.mytoken, window.bc.info.mainAccount, (err, value) => {
+              console.log("My rewards :" + value);
+              this.rewards = parseInt(window.bc.weiToEther(value));
+            });
+          }
         });
-        window.bc.contract('SovStake').TokenStaked().watch((err, result) => {
-          console.log("Token staked success");
-          window.bc.contract('SovStake').getMyTVL(this.mytoken, { from: window.bc.info.mainAccount }, (err, value) => {
-            console.log("My TVL :" + value);
-            this.mytvl = parseInt(window.bc.weiToEther(value));
-          });
-        });
-        this.tokenContract = this.getERC20Contract();
+
         console.log(this.tokenContract);
         console.log(window.bc.info.mainAccount);
         this.tokenContract.balanceOf(window.bc.info.mainAccount, (err, value) => {
@@ -115,68 +143,6 @@ export default {
           this.allowance = parseInt(window.bc.weiToEther(value));
           console.log("Allowance :" + this.allowance);
         });
-          /*window.bc.contract().getVotingStatus((err, status) => {
-          this.updateVotingStatus(status);
-          this.statusList[status].icon = 'pi pi-circle-on';
-          if (this.votingStatus == 0) {
-            this.updateNumberVoters();
-          }
-          else if (this.votingStatus == 1) {
-            this.initProposalList();
-          }
-          else if (this.votingStatus == 5) {
-            this.updateWinningVote();
-          }
-        });*/
-        this.tokenContract.Approval().watch((err, result) => {
-          if (err) {
-            console.log('Could not approve increaseAllowance');
-          }
-          else {
-            console.log("Approval event received ");
-            console.log("   value   :" + result.args.value);
-            console.log("   owner   :" + result.args.owner);
-            console.log("   spender :" + result.args.spender);
-            console.log("   sov     :" + window.bc.contract('SovStake').address);
-            if (this.depositRequested) {
-              this.depositRequested = false;
-              this.depositToken();
-            }
-          }
-        });
-        /*let VoterRegistered = window.bc.contract().VoterRegistered();
-        VoterRegistered.watch((err, result) => {
-          if (err) {
-            console.log('could not get event VoterRegistered()')
-          } else {
-            console.log("voterRegistered event received");
-            console.log(result.args);
-            this.updateNumberVoters();
-          }
-        });
-        window.bc.contract().WorkflowStatusChange().watch((err, result) => {
-          if (err) {
-            console.log('could not get event WorkflowStatusChange()')
-          } else {
-            console.log("WorkflowStatusChange event received");
-            console.log(result.args);
-            this.updateVotingStatus(result.args.newStatus);
-            this.statusList[result.args.newStatus].icon = 'pi pi-circle-on';
-            this.statusList[result.args.previousStatus].icon = 'pi pi-circle-off';
-            if (this.votingStatus == 5)
-              this.updateWinningVote();
-          }
-        });
-        window.bc.contract().ProposalRegistered().watch((err, result) => {
-          if (err) {
-            console.log('could not get event ProposalRegistered()')
-          } else {
-            console.log("ProposalRegistered event received");
-            console.log(result.args);
-            this.addProposal(result.args.proposalId);
-          }
-        });*/
-      }
     },
     allowDeposit() {
       console.log("Allow deposit : " + this.deposit);
@@ -224,7 +190,7 @@ export default {
         window.bc.getMainAccount()
         .then(account => {
             //window.bc.contract('SovStake').withdraw(parseInt(window.bc.etherToWei(this.withdraw)), { from: account }, (error, txHash) => {
-            window.bc.contract('SovStake').withdraw({ from: account }, (error, txHash) => {
+            window.bc.contract('SovStake').withdraw(this.mytoken, { from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Check console logs";
                   console.error(error);
