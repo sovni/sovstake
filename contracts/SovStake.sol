@@ -49,6 +49,8 @@ contract SovStake is ERC20, Ownable {
         require(aggregator != address(0), "aggregator cannot be a zero address");
         require(stakeTokens[token].aggregator == address(0), "token already existing");
         require(bytes(name).length > 0, "token name cannot be empty");
+        require(stakeTokens[token].enabled == false, "cannot add token twice");
+        require(stakeTokens[token].tvl == 0, "cannot add token twice");
 
         stakeTokens[token].name = name;
         stakeTokens[token].aggregator = aggregator;
