@@ -7,12 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract Dai is ERC20 {
-    constructor() ERC20("DAI", "DAI") {
-        _mint(msg.sender, 21000000000000000000000000);
-    }
-}
-
 contract SovStake is ERC20, Ownable {
     struct stakableToken {
         string name;
@@ -55,7 +49,7 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].name = name;
         stakeTokens[token].aggregator = aggregator;
         stakeTokens[token].enabled = true;
-        //stakeTokens[token].priceFeed = AggregatorV3Interface(aggregator);
+        stakeTokens[token].priceFeed = AggregatorV3Interface(aggregator);
 
         tokenArray.push(token);
 
@@ -159,10 +153,16 @@ contract SovStake is ERC20, Ownable {
         require(privileged[_msgSender()] == true, "Caller is not privileged");
         _;
     }
+
     // Return latest price of Token in ETH
     function getLatestPrice(address token) public view returns (uint) {
-        int price;
-        price = 1;//stakeTokens[token].priceFeed.latestRoundData();
+        (
+            /*uint80 roundID*/,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = stakeTokens[token].priceFeed.latestRoundData();        
  
         return uint(price);
     }
