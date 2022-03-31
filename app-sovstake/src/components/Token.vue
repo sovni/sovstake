@@ -151,7 +151,8 @@ export default {
         window.bc.getMainAccount()
         .then(account => {
             this.depositRequested = true;
-            this.tokenContract.increaseAllowance(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
+            //this.tokenContract.increaseAllowance(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
+            this.tokenContract.approve(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Allowance refused";
                   console.error(error);
