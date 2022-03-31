@@ -26,8 +26,8 @@
                 <Column field="code" header="Code"></Column>
                 <Column field="address" header="Address"></Column>
                 <Column field="tvl" header="Tvl"></Column>
-                <Column field="enabled" header="Enabled"></Column>
-                <Column header="Status">
+                <Column field="price" header="Price"></Column>
+                <Column field="enabled" header="Status">
                     <template #body="slotProps">
                         <Button v-if="slotProps.data.enabled == '1'" icon="pi pi-play" v-tooltip="'Disable'" class="p-button-rounded p-button-text p-button-success p-button-sm" @click="disableToken(slotProps.data.address)" />
                         <Button v-if="slotProps.data.enabled != '1'" icon="pi pi-pause" v-tooltip="'Enable'" class="p-button-rounded p-button-text p-button-danger p-button-sm" @click="enableToken(slotProps.data.address)" />
@@ -64,6 +64,7 @@ export default {
       tokenName: '',
       tokenAddress: '',
       tokenAggreg: '',
+      updating: false,
       tmoConn: null // contain the intervalID given by setInterval
     }
   },
@@ -116,22 +117,32 @@ export default {
         }
     },
     initTokenList() {
+      console.log("updating " + this.updating);
+      if (this.updating)
+        return;
+      this.updating = true;
       this.tokens=[];
       let contract = window.bc.contract('SovStake');
       contract.getTokenArray((error, tokenArray) => {
-          console.log("array = " + tokenArray);
+        console.log("array = " + tokenArray);
         tokenArray.forEach((item, index) => {
           contract.getTokenName(item, (err, name) => {
             contract.getTVL(item, (err, tvl) => {
               contract.getTokenStatus(item, (err, status) => {
                 tvl = parseInt(window.bc.weiToEther(tvl));
-                console.log("item " + item);
-                this.tokens.push({"code":name, "address":item, "tvl":tvl, "enabled":status});
+                contract.getLatestPrice(item, (err, price) => {
+                    console.log("price=" + price + ":" + window.bc.weiToEther(price));
+                    price = window.bc.weiToEther(price);
+                    console.log("item " + item);
+                  this.tokens.push({"code":name, "address":item, "tvl":tvl, "price":price, "enabled":status});
+                });
               });
             });
           });
         });
-      });        
+      }); 
+      this.updating = false; 
+      console.log("updated");      
     },
 
     waitContractInit() {
@@ -143,7 +154,7 @@ export default {
 
         window.bc.contract('SovStake').TokenAdded().watch((err, result) => {
             console.log("new token added : " + result.args.token);
-            //this.initTokenList();
+            this.initTokenList();
         });
         window.bc.contract('SovStake').TokenStatusChanged().watch((err, result) => {
             console.log("toekn status changed " + result.args.token);
