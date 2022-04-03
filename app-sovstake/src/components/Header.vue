@@ -2,7 +2,7 @@
     <div>
       <Menubar :model="items" >
          <template #end>
-            {{ getMainAccount() }}
+            Wallet: {{ account }}
          </template>
       </Menubar>
     </div>
@@ -33,7 +33,9 @@
                    icon:'pi pi-fw pi-cog',
                    to:'/admin'
                }
-            ]
+            ],
+            account: '',
+            tmoConn: null // contain the intervalID given by setInterval
         }
       },    
       components: {
@@ -42,9 +44,19 @@
       mounted() {
       },
       methods: {
-         getMainAccount(){
-            return window.bc.info.mainAccount;
+         waitContractInit() {
+            if (this.blockchainIsConnected()) {
+               clearInterval(this.tmoConn);
+               this.account = window.bc.info.mainAccount.substring(0, 8) + "...";
+            }
          }
-      }
+      },
+   created() {
+         // it tries to get the user list from the blockchian once
+         // the connection is established
+         this.tmoConn = setInterval(() => {
+            this.waitContractInit();
+         }, 1000);
    }
+  }
 </script>
