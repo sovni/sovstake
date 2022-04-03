@@ -12,6 +12,7 @@ contract SovStake is ERC20, Ownable {
         string name;
         address aggregator;
         bool enabled;
+        uint apr;
         uint tvl;
         AggregatorV3Interface priceFeed;
         mapping(address => uint) stakers;
@@ -21,13 +22,13 @@ contract SovStake is ERC20, Ownable {
     mapping(address => stakableToken) private stakeTokens;
     address[] private tokenArray;
 
-    uint private ratio;
+    uint private nbsecyear;
 
     event TokenStaked(address staker, uint quantity);
     event TokenWithdrawn(address staker);
     event TokenAdded(address token);
     event TokenStatusChanged(address token, bool enabled);
-    event RatioChanged(uint ratio);
+    event APRChanged(address token, uint apr);
     event RewardsSent(address staker, uint rewards);
 
     using SafeMath for uint;
@@ -35,7 +36,7 @@ contract SovStake is ERC20, Ownable {
     constructor() ERC20("SovToken", "SOV") {
         //_mint(msg.sender, 21000000000000000000000000);
         privileged[owner()] = true;
-        ratio =100;
+        nbsecyear=365*24*60*60;
     }
 
     function addStakableToken(address token, string memory name, address aggregator) public onlyPrivileged {
@@ -49,6 +50,7 @@ contract SovStake is ERC20, Ownable {
         stakeTokens[token].name = name;
         stakeTokens[token].aggregator = aggregator;
         stakeTokens[token].enabled = true;
+        stakeTokens[token].apr = 100;
         stakeTokens[token].priceFeed = AggregatorV3Interface(aggregator);
 
         tokenArray.push(token);
@@ -80,14 +82,23 @@ contract SovStake is ERC20, Ownable {
         return stakeTokens[token].aggregator;
     }
 
-    function getRatio()public view returns(uint){
-        return ratio;
+    function getAPR(address token) public view returns(uint){
+        return stakeTokens[token].apr;
     }
 
-    function setRatio(uint value) public onlyPrivileged {
+    function getTokenInfo(address token) public view returns (string memory name, address aggregator, bool enabled, uint apr, uint tvl) {
+        stakableToken storage t = stakeTokens[token];
+        return (t.name, t.aggregator, t.enabled, t.apr, t.tvl);
+    }
+
+    function setAPR(address token, uint value) public onlyPrivileged {
         require(value != 0, "ratio cannot be 0");
-        ratio = value;
-        emit RatioChanged(ratio);
+        stakeTokens[token].apr = value;
+        emit APRChanged(token, value);
+    }
+
+    function getStakeDate(address token) public view  returns (uint) {
+        return stakeTokens[token].stakersDate[msg.sender];
     }
 
     function stake(address token, uint quantity) public {
@@ -97,7 +108,7 @@ contract SovStake is ERC20, Ownable {
         if (stakeTokens[token].stakers[msg.sender] > 0 && stakeTokens[token].stakersDate[msg.sender] > 0) {
             computeRewards(token, msg.sender);
         }
-        stakeTokens[token].stakers[msg.sender] =  stakeTokens[token].stakers[msg.sender].add(quantity);
+        stakeTokens[token].stakers[msg.sender] = stakeTokens[token].stakers[msg.sender].add(quantity);
         stakeTokens[token].tvl = stakeTokens[token].tvl.add(quantity);
         stakeTokens[token].stakersDate[msg.sender] = block.timestamp;
         ERC20(token).transferFrom(msg.sender, address(this), quantity);
@@ -107,6 +118,7 @@ contract SovStake is ERC20, Ownable {
     function withdraw(address token) public {
         require(stakeTokens[token].stakers[msg.sender] > 0, "No staked token.");
         require(stakeTokens[token].stakersDate[msg.sender] != 0, "No stake date registered.");
+        require(block.timestamp != 0, "timestamp is not zero");
         
         computeRewards(token, msg.sender);
         uint quantity = stakeTokens[token].stakers[msg.sender];
@@ -117,20 +129,15 @@ contract SovStake is ERC20, Ownable {
         emit TokenWithdrawn(msg.sender);
     }
 
-    function calculateRewards(address token, address staker) public view returns (uint) {
-        require(stakeTokens[token].stakers[staker] > 0, "No staked token.");
-        require(stakeTokens[token].stakersDate[staker] != 0, "No stake date registered.");
-        
-        uint rewards = (getLatestPrice(token).mul(stakeTokens[token].stakers[staker])) * (block.timestamp - stakeTokens[token].stakersDate[staker]) / ratio;
-
-        return rewards;
-    }
-
     function computeRewards(address token, address staker) private {
         require(stakeTokens[token].stakers[staker] > 0, "No staked token.");
         require(stakeTokens[token].stakersDate[staker] != 0, "No stake date registered.");
 
-        uint rewards = (getLatestPrice(token).mul(stakeTokens[token].stakers[staker])) * (block.timestamp - stakeTokens[token].stakersDate[staker]) / ratio;
+        uint stakeTime = block.timestamp - stakeTokens[token].stakersDate[staker];
+        require (stakeTime > 0, "stake time is negative or zero");
+
+        uint stakeAmount = (getLatestPrice(token).mul(stakeTokens[token].stakers[staker])).div(1000000000000000000);
+        uint rewards = ((stakeAmount.mul(stakeTokens[token].apr).div(100)).mul(stakeTime)).div(nbsecyear);
 
         stakeTokens[token].stakersDate[staker] = block.timestamp;
         _mint(staker, rewards);
