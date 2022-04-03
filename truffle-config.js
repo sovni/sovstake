@@ -18,6 +18,8 @@
  *
  */
 
+ const HDWalletProvider = require('@truffle/hdwallet-provider');
+ require('dotenv').config();
 // const HDWalletProvider = require('@truffle/hdwallet-provider');
 //
 // const fs = require('fs');
@@ -46,6 +48,12 @@ module.exports = {
       port: 7545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
      },
+     kovan: {
+      provider: function() {
+        return new HDWalletProvider(`${process.env.MNEMONIC}`, `https://kovan.infura.io/v3/${process.env.INFURA_ID}`)
+      },
+      network_id: 42
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
