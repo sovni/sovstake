@@ -1,31 +1,37 @@
 <template>
-    <div class="p-fluid grid">
-            <form @submit.prevent="addToken">
-                <div class="field col-12 md:col-4">
+    <div class="p-grid p-m-2">
+          <div class="p-col-12">
+            <form @submit.prevent="addToken" style="width:100%">
+                <div class="p-col-2 p-m-2">
                 <span class="p-float-label">
                     <InputText v-model="tokenName" id="tokenName" />
                     <label for="tokenName">Token Name</label>
                 </span>
                 </div>
-                <div class="field col-12 md:col-4">
+                <div class="p-col-2 p-m-2">
                 <span class="p-float-label">
                     <InputText v-model="tokenAddress" id="tokenAddress"/>
                     <label for="tokenAddress">Token Address</label>
                 </span>
                 </div>
-                <div class="field col-12 md:col-4">
+                <div class="p-col-4 p-m-2">
                 <span class="p-float-label">
                     <InputText v-model="tokenAggreg" id="tokenAggreg"/>
                     <label for="tokenAggreg">Aggregator</label>
                 </span>
                 </div>
-                <Button label="Add Stakable Token" @click="addStackableToken()"/>
+                <div class="p-col-2 p-m-2">
+                  <Button label="Add Stakable Token" @click="addStackableToken()"/>
+                </div>
             </form>
-        <div class="p-flex-column p-m-12 p-mt-2">                       
+          </div>
+        <div class="p-flex p-m-2 p-col-12">                       
             <DataTable :value="tokens" class="p-datatable-sm" responsiveLayout="scroll" autoLayout>
-                <Column field="code" header="Code"></Column>
+                <Column field="code" header="Token"></Column>
                 <Column field="address" header="Address"></Column>
+                <Column field="aggreg" header="Aggregator"></Column>
                 <Column field="tvl" header="Tvl"></Column>
+                <Column field="apr" header="APR"></Column>
                 <Column field="price" header="Price"></Column>
                 <Column field="enabled" header="Status">
                     <template #body="slotProps">
@@ -126,17 +132,11 @@ export default {
       contract.getTokenArray((error, tokenArray) => {
         console.log("array = " + tokenArray);
         tokenArray.forEach((item, index) => {
-          contract.getTokenName(item, (err, name) => {
-            contract.getTVL(item, (err, tvl) => {
-              contract.getTokenStatus(item, (err, status) => {
-                tvl = parseInt(window.bc.weiToEther(tvl));
-                contract.getLatestPrice(item, (err, price) => {
-                    console.log("price=" + price + ":" + window.bc.weiToEther(price));
-                    price = window.bc.weiToEther(price);
-                    console.log("item " + item);
-                  this.tokens.push({"code":name, "address":item, "tvl":tvl, "price":price, "enabled":status});
-                });
-              });
+          contract.getTokenInfo(item, (err, result) => {
+            console.log("Get token status " + result);
+            contract.getLatestPrice(item, (err, price) => {
+              price = parseFloat(window.bc.weiToEther(price)).toFixed(7);//window.bc.weiToEther(price);
+              this.tokens.push({"code":result[0], "address":item, "aggreg":result[1], "tvl":result[4], "apr":result[3], "price":price, "enabled":result[2]});
             });
           });
         });

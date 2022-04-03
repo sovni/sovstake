@@ -1,11 +1,9 @@
 <template>
-  <div class="p-flex-column p-m-2">
-    <div class="p-mt-2">
+  <div class="p-grid p-m-2">
+    <div class="p-m-2 p-col-12">
       <h1>{{ msg }}</h1>
     </div>
-    <div class="p-mt-4">
-        <Token v-for="(mytoken, index) in tokenArray" v-bind:key="mytoken" v-bind:mytoken="mytoken"/> 
-    </div>      
+      <Token v-for="(mytoken, index) in tokenArray" v-bind:key="mytoken" v-bind:mytoken="mytoken"/> 
   </div>
 </template>
 <script>
@@ -39,13 +37,11 @@ export default {
         console.log("Info : " + window.bc.info.balance);
         console.log("Account : " + window.bc.info.mainAccount);
         //console.log("Owner : "+ window.bc.contract('SovStake').owner());
-        //window.bc.contract('SovStake').addStakableToken(window.bc.contract('Dai').address, "DAI", window.bc.contract('Dai').address, { from: window.bc.info.mainAccount }, (error, txHash) => {
 
-          window.bc.contract('SovStake').getTokenArray((error, tokenArray) => {
-            this.tokenArray = tokenArray;
-            console.log("Res : " + this.tokenArray);
-          });
-        //});
+        window.bc.contract('SovStake').getTokenArray((error, tokenArray) => {
+          this.tokenArray = tokenArray;
+          console.log("Res : " + this.tokenArray);
+        });
         console.log("Info : " + window.bc.info.balance);
         console.log("Account : " + window.bc.info.mainAccount);
         //console.log("Owner : "+ window.bc.contract('SovStake').owner());

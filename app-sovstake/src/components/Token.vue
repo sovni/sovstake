@@ -1,13 +1,13 @@
 <template>
-  <div class="p-flex-column p-m-2">
-    <div class="p-mt-4">
-      <Card style="width:400px;height:450px;">
+    <div class="p-m-2 p-col-3">
+      <Card style="width:380px;height:480px;">
           <template #title>
             Token Name : {{tokenName}}
           </template>
           <template #content>
+            <h3>Token price : {{tokenPrice}} ETH</h3>
             <h3>My TVL : {{mytvl}}</h3>
-            <h3>Rewards ongoing : {{rewards}}</h3>
+            <h3>Stake Date : {{sdate}}</h3>
             <TabView>
               <TabPanel header="Deposit">
                 <h3>My Wallet : {{wallet}}</h3>
@@ -20,7 +20,6 @@
               <TabPanel header="Withdraw">
                 <h3>Withdraw</h3>
                 <form @submit.prevent="withdraw">
-                  <InputNumber v-model="withdraw" />
                   <Button label="Withdraw" @click="withdrawToken()"/>
                 </form>
               </TabPanel>
@@ -28,7 +27,6 @@
           </template>
       </Card>
     </div>      
-  </div>
 </template>
 <script>
 // importing common function
@@ -61,11 +59,11 @@ export default {
       tvl: 0,
       mytvl: 0,
       wallet: 0,
-      deposit: 2000,
+      deposit: 0,
       allowance:0,
-      rewards: 0,
+      sdate: '',
       deposit_requested: false,
-      withdraw: 0,
+      tokenPrice: 0,
       tokenContract: null,
       tmoConn: null // contain the intervalID given by setInterval
     }
@@ -82,8 +80,17 @@ export default {
         this.updateInfos();
 
         window.bc.contract('SovStake').TokenStaked().watch((err, result) => {
-          console.log("Token staked success");
-          this.updateInfos();
+          if (result.args.staker == window.bc.info.mainAccount) {
+            console.log("Token staked success");
+            this.updateInfos();
+          }
+        });
+
+        window.bc.contract('SovStake').TokenWithdrawn().watch((err, result) => {
+          if (result.args.staker == window.bc.info.mainAccount) {
+            console.log("Token staked success");
+            this.updateInfos();
+          }
         });
 
         this.tokenContract.Approval().watch((err, result) => {
@@ -119,13 +126,17 @@ export default {
           this.mytvl = parseInt(window.bc.weiToEther(value));
 
           if (this.mytvl > 0) {
-            window.bc.contract('SovStake').calculateRewards(this.mytoken, window.bc.info.mainAccount, (err, value) => {
-              console.log("My rewards :" + value);
-              this.rewards = parseInt(window.bc.weiToEther(value));
+            window.bc.contract('SovStake').getStakeDate(this.mytoken, {from: window.bc.info.mainAccount}, (err, sdate) => {
+              console.log("stake date :" + sdate);
+              this.sdate = sdate;
             });
           }
         });
 
+        window.bc.contract('SovStake').getLatestPrice(this.mytoken, { from: window.bc.info.mainAccount }, (err, value) => {
+          console.log("Price :" + value);
+          this.tokenPrice = parseFloat(window.bc.weiToEther(value)).toFixed(5);
+        });
         console.log(this.tokenContract);
         console.log(window.bc.info.mainAccount);
         this.tokenContract.balanceOf(window.bc.info.mainAccount, (err, value) => {
@@ -151,7 +162,6 @@ export default {
         window.bc.getMainAccount()
         .then(account => {
             this.depositRequested = true;
-            //this.tokenContract.increaseAllowance(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
             this.tokenContract.approve(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit)), { from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Allowance refused";
@@ -190,7 +200,6 @@ export default {
       if (this.blockchainIsConnected()) {
         window.bc.getMainAccount()
         .then(account => {
-            //window.bc.contract('SovStake').withdraw(parseInt(window.bc.etherToWei(this.withdraw)), { from: account }, (error, txHash) => {
             window.bc.contract('SovStake').withdraw(this.mytoken, { from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Check console logs";
@@ -205,10 +214,6 @@ export default {
       }
     },
     getERC20Contract() {
-      /*return window.bc.web3 ? new window.bc.web3().eth.contract(ERC20, this.mytoken, {
-        from: window.bc.web3().eth.defaultAccount,
-      })
-      :   null*/
       return  window.bc.web3().eth.contract(ERC20).at(this.mytoken);
 
     }
