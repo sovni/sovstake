@@ -1,6 +1,6 @@
 import BcExplorer from './BcExplorer'
-import SovStakeContract from '../../../build/contracts/SovStake.json';
-import Dai from '../../../build/contracts/Dai.json';
+import SovStakeContract from '../../contracts/SovStake.json';
+//import Dai from '../../contracts/Dai.json';
 
 export default {
     data() {
@@ -39,16 +39,16 @@ export default {
                         this.showConnectionErrorMessage(error);
                     } else {
                         this.bcConnectionError = false;
-                        this.bcConnected = this.blockchainIsConnected();                        // calling a smart contract function in order to check the contract address
+                        this.bcConnected = this.blockchainIsConnected(); 
 
-                            window.bc.initWithContractJson(Dai, 'http://127.0.0.1:7545', 'Dai')
+                            /*window.bc.initWithContractJson(Dai, 'http://127.0.0.1:7545', 'Dai')
                             .then((error) => {
                                 if (error)
                                     console.log("Error init Dai contract");
                                 else {
                                     console.log("Dai contract initialised");
                                 }
-                            })
+                            })*/
                     }
                 })
                 .catch(error => this.showConnectionErrorMessage(error));
