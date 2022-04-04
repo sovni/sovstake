@@ -80,38 +80,36 @@ export default {
         this.tokenContract = this.getERC20Contract();
         this.updateInfos();
 
-        window.bc.contract('SovStake').events.TokenStaked()
+        window.bc.contract('SovStake').events.TokenStaked({fromBlock:'latest'})
           .on('data', result => {
           if (result.returnValues.staker == window.bc.info.mainAccount) {
             console.log("Token staked success");
+            //this.$toast.add({severity:'success', summary: 'Token staked', group: "bottom-right", life: 5000});
             this.updateInfos();
           }
         });
 
-        window.bc.contract('SovStake').events.TokenWithdrawn()
+        window.bc.contract('SovStake').events.TokenWithdrawn({fromBlock:'latest'})
           .on('data', result => {
           if (result.returnValues.staker == window.bc.info.mainAccount) {
             console.log("Token staked success");
+            //this.$toast.add({severity:'success', summary: 'Token withdrawn', group: "bottom-right", life: 5000});
             this.updateInfos();
           }
         });
 
-        window.bc.contract('SovStake').events.Approval()
+        this.tokenContract.events.Approval({fromBlock:'latest'})
           .on('data', result => {
-          if (err) {
-            console.log('Could not approve increaseAllowance');
-          }
-          else {
+            //this.$toast.add({severity:'success', summary: 'Approved', group: "bottom-right", life: 5000});
             console.log("Approval event received ");
             console.log("   value   :" + result.returnValues.value);
             console.log("   owner   :" + result.returnValues.owner);
             console.log("   spender :" + result.returnValues.spender);
-            console.log("   sov     :" + window.bc.contract('SovStake').address);
+            console.log("   sov     :" + window.bc.contract('SovStake').options.address);
             if (this.depositRequested) {
               this.depositRequested = false;
               this.depositToken();
             }
-          }
         });
       }
     },
@@ -154,13 +152,11 @@ export default {
             console.log("error : " + err);
           else {
             console.log("My Token :" + value);
-            //this.wallet = window.bc.weiToEther(parseInt(value));
             this.wallet = parseInt(window.bc.weiToEther(value));
           }
         });
-        this.tokenContract.methods.allowance(window.bc.info.mainAccount, window.bc.contract('SovStake').address).send((err, value) => {
+        this.tokenContract.methods.allowance(window.bc.info.mainAccount, window.bc.contract('SovStake').options.address).call((err, value) => {
           console.log("Token :" + value);
-          //this.wallet = window.bc.weiToEther(parseInt(value));
           this.allowance = parseInt(window.bc.weiToEther(value));
           console.log("Allowance :" + this.allowance);
         });
@@ -172,7 +168,7 @@ export default {
         window.bc.getMainAccount()
         .then(account => {
             this.depositRequested = true;
-            this.tokenContract.methods.approve(window.bc.contract('SovStake').address, parseInt(window.bc.etherToWei(this.deposit))).call({ from: account }, (error, txHash) => {
+            this.tokenContract.methods.approve(window.bc.contract('SovStake').options.address, window.bc.etherToWei(this.deposit.toString())).send({ from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Allowance refused";
                   console.error(error);
@@ -191,7 +187,7 @@ export default {
       if (this.blockchainIsConnected()) {
         window.bc.getMainAccount()
         .then(account => {
-            window.bc.contract('SovStake').methofd.stake(this.mytoken, parseInt(window.bc.etherToWei(this.deposit))).send({ from: account }, (error, txHash) => {
+            window.bc.contract('SovStake').methods.stake(this.mytoken, window.bc.etherToWei(this.deposit.toString())).send({ from: account }, (error, txHash) => {
                 if (error) {
                   this.msgStatus = "Error. Check console logs";
                   console.error(error);

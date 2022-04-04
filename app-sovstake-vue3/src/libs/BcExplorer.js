@@ -437,11 +437,11 @@ class BcExplorer {
      * @return {numeric}
      */
     etherToWei(bal) {
-    if (typeof bal == 'object') {
-        bal = bal.toNumber();
-    }
+        if (typeof bal == 'object') {
+            bal = bal.toNumber();
+        }
 
-    return this.web3().utils.toWei(bal, "ether");
+        return this.web3().utils.toWei(bal, "ether");
     }
 
     /**
