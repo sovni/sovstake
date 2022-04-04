@@ -136,7 +136,8 @@ export default {
             console.log("Get token status " + result);
             contract.getLatestPrice(item, (err, price) => {
               price = parseFloat(window.bc.weiToEther(price)).toFixed(7);//window.bc.weiToEther(price);
-              this.tokens.push({"code":result[0], "address":item, "aggreg":result[1], "tvl":result[4], "apr":result[3], "price":price, "enabled":result[2]});
+              let tvl = parseFloat(window.bc.weiToEther(result[4])).toFixed(7);//window.bc.weiToEther(price);
+              this.tokens.push({"code":result[0], "address":item, "aggreg":result[1], "tvl":tvl, "apr":result[3], "price":price, "enabled":result[2]});
             });
           });
         });
