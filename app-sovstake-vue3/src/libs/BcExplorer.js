@@ -427,7 +427,7 @@ class BcExplorer {
             bal = bal.toNumber();
         }
 
-        return this.web3().fromWei(bal, "ether");
+        return this.web3().utils.fromWei(bal, "ether");
     }
 
     /**
@@ -441,7 +441,7 @@ class BcExplorer {
         bal = bal.toNumber();
     }
 
-    return this.web3().toWei(bal, "ether");
+    return this.web3().utils.toWei(bal, "ether");
     }
 
     /**
@@ -451,7 +451,7 @@ class BcExplorer {
      * @return {string}
      */
     toAscii(bytes) {
-        return this.web3().toAscii(bytes).replace(/\u0000/g, '');
+        return this.web3().utils.hexToAscii(bytes).replace(/\u0000/g, '');
     }
 
 

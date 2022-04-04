@@ -1,31 +1,6 @@
 <template>
-    <div class="p-grid p-m-2">
-          <div class="p-col-12">
-            <form @submit.prevent="addToken" style="width:100%">
-                <div class="p-col-2 p-m-2">
-                <span class="p-float-label">
-                    <InputText v-model="tokenName" id="tokenName" />
-                    <label for="tokenName">Token Name</label>
-                </span>
-                </div>
-                <div class="p-col-2 p-m-2">
-                <span class="p-float-label">
-                    <InputText v-model="tokenAddress" id="tokenAddress"/>
-                    <label for="tokenAddress">Token Address</label>
-                </span>
-                </div>
-                <div class="p-col-4 p-m-2">
-                <span class="p-float-label">
-                    <InputText v-model="tokenAggreg" id="tokenAggreg"/>
-                    <label for="tokenAggreg">Aggregator</label>
-                </span>
-                </div>
-                <div class="p-col-2 p-m-2">
-                  <Button label="Add Stakable Token" @click="addStackableToken()"/>
-                </div>
-            </form>
-          </div>
-        <div class="p-flex p-m-2 p-col-12">                       
+    <div class="p-grid m-2">
+        <div class="flex-m-2 col-12">                       
             <DataTable :value="tokens" class="p-datatable-sm" responsiveLayout="scroll" autoLayout>
                 <Column field="code" header="Token"></Column>
                 <Column field="address" header="Address"></Column>
@@ -40,6 +15,31 @@
                     </template>
                 </Column>
             </DataTable>
+        </div>
+        <div class="col-12">
+          <form @submit.prevent="addToken" style="width:100%">
+              <div class="col-2 m-2">
+              <span class="p-float-label">
+                  <InputText v-model="tokenName" id="tokenName" />
+                  <label for="tokenName">Token Name</label>
+              </span>
+              </div>
+              <div class="col-2 m-2">
+              <span class="p-float-label">
+                  <InputText v-model="tokenAddress" id="tokenAddress"/>
+                  <label for="tokenAddress">Token Address</label>
+              </span>
+              </div>
+              <div class="col-4 m-2">
+              <span class="p-float-label">
+                  <InputText v-model="tokenAggreg" id="tokenAggreg"/>
+                  <label for="tokenAggreg">Aggregator</label>
+              </span>
+              </div>
+              <div class="col-2 m-2">
+                <Button label="Add Stakable Token" @click="addStackableToken()"/>
+              </div>
+          </form>
         </div>
     </div>
 </template>
@@ -80,7 +80,7 @@ export default {
         if (this.blockchainIsConnected()) {
             window.bc.getMainAccount()
             .then(account => {
-                window.bc.contract('SovStake').addStakableToken(this.tokenAddress, this.tokenName, this.tokenAggreg, { from: account }, (error, txHash) => {
+                window.bc.contract('SovStake').methods.addStakableToken(this.tokenAddress, this.tokenName, this.tokenAggreg).send({ from: account }, (error, txHash) => {
                     if (error) {
                         console.error(error);
                     }
@@ -96,12 +96,12 @@ export default {
         if (this.blockchainIsConnected()) {
             window.bc.getMainAccount()
             .then(account => {
-                window.bc.contract('SovStake').updateTokenStatus(token, false, { from: account }, (error, txHash) => {
+                window.bc.contract('SovStake').methods.updateTokenStatus(token, false).send({ from: account }, (error, txHash) => {
                     if (error) {
                         console.error(error);
                     }
                     else
-                        this.initTokenList();
+                        console.log("Token disabled");
                 });
             })
             .catch();
@@ -111,12 +111,12 @@ export default {
         if (this.blockchainIsConnected()) {
             window.bc.getMainAccount()
             .then(account => {
-                window.bc.contract('SovStake').updateTokenStatus(token, true, { from: account }, (error, txHash) => {
+                window.bc.contract('SovStake').methods.updateTokenStatus(token, true).send({ from: account }, (error, txHash) => {
                     if (error) {
                         console.error(error);
                     }
                     else
-                        this.initTokenList();
+                        console.log("Token enabled");
                 });
             })
             .catch();
@@ -129,14 +129,15 @@ export default {
       this.updating = true;
       this.tokens=[];
       let contract = window.bc.contract('SovStake');
-      contract.getTokenArray((error, tokenArray) => {
+      contract.methods.getTokenArray().call((error, tokenArray) => {
         console.log("array = " + tokenArray);
         tokenArray.forEach((item, index) => {
-          contract.getTokenInfo(item, (err, result) => {
+          contract.methods.getTokenInfo(item).call((err, result) => {
             console.log("Get token status " + result);
-            contract.getLatestPrice(item, (err, price) => {
+            contract.methods.getLatestPrice(item).call((err, price) => {
               price = parseFloat(window.bc.weiToEther(price)).toFixed(7);//window.bc.weiToEther(price);
-              this.tokens.push({"code":result[0], "address":item, "aggreg":result[1], "tvl":result[4], "apr":result[3], "price":price, "enabled":result[2]});
+              let tvl = parseInt(window.bc.weiToEther(result[4]));
+              this.tokens.push({"code":result[0], "address":item, "aggreg":result[1], "tvl":tvl, "apr":result[3], "price":price, "enabled":result[2]});
             });
           });
         });
@@ -152,12 +153,16 @@ export default {
 
         this.initTokenList();
 
-        window.bc.contract('SovStake').TokenAdded().watch((err, result) => {
+        window.bc.contract('SovStake').events.TokenAdded()
+          .on('data', event => {
+        //window.bc.contract('SovStake').events.TokenAdded().watch((err, result) => {
             console.log("new token added : " + result.args.token);
             this.initTokenList();
         });
-        window.bc.contract('SovStake').TokenStatusChanged().watch((err, result) => {
-            console.log("toekn status changed " + result.args.token);
+        window.bc.contract('SovStake').events.TokenStatusChanged()
+          .on('data', event => {
+        //window.bc.contract('SovStake').events.TokenStatusChanged().watch((err, result) => {
+            console.log("toekn status changed " + event);
             this.initTokenList();
         });
       }

@@ -1,6 +1,6 @@
 <template>
-  <div class="p-grid p-m-2">
-    <div class="p-m-2 p-col-12">
+  <div class="grid m-2">
+    <div class="m-2 col-12">
       <h1>{{ msg }}</h1>
     </div>
       <Token v-for="(mytoken, index) in tokenArray" v-bind:key="mytoken" v-bind:mytoken="mytoken"/> 
@@ -40,7 +40,7 @@ export default {
 
         console.log(window.bc.contract('SovStake'));
 
-        window.bc.contract('SovStake').methods.getTokenArray((error, tokenArray) => {
+        window.bc.contract('SovStake').methods.getTokenArray().call((error, tokenArray) => {
           this.tokenArray = tokenArray;
           console.log("Res : " + this.tokenArray);
         });

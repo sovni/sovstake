@@ -2,7 +2,7 @@
     <div>
       <Menubar :model="items" >
          <template #end>
-            Wallet: {{ account }}
+            Kovan Wallet: {{ account }}
          </template>
       </Menubar>
     </div>

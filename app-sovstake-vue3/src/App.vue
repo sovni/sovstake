@@ -4,8 +4,6 @@ import HelloWorld from '@/components/HelloWorld.vue'
 import mixin from './libs/mixinViews';
 import Header from '@/components/Header.vue'
 import Toast from 'primevue/toast';
-
-
 </script>
 
 <template>
@@ -66,4 +64,7 @@ export default {
 }
 </script>
 <style>
+body {
+  background-color : #dbdbdb;;
+}
 </style>

@@ -1,5 +1,5 @@
 import BcExplorer from './BcExplorer'
-import SovStakeContract from '../../../build/contracts/SovStake.json';
+import SovStakeContract from '../../contracts/SovStake.json';
 //import Dai from '../../../build/contracts/Dai.json';
 
 export default {
