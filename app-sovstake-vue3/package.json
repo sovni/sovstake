@@ -4,7 +4,7 @@
   "homepage": "https://sovni.github.io/sovstake/",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --base=/sovstake/",
     "preview": "vite preview --port 5050",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"  },
