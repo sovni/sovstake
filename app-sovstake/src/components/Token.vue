@@ -129,12 +129,7 @@ export default {
             window.bc.contract('SovStake').getStakeDate(this.mytoken, {from: window.bc.info.mainAccount}, (err, sdate) => {
               console.log("stake date :" + sdate);
               let date = new Date(parseInt(sdate)*1000); 
-              this.sdate = date.getDate()+
-              "/"+(date.getMonth()+1)+
-              "/"+date.getFullYear()+
-              " "+date.getHours()+
-              ":"+date.getMinutes()+
-              ":"+date.getSeconds();
+              this.sdate = date.toLocaleString();
             });
           }
         });
