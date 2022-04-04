@@ -1,11 +1,13 @@
 {
   "name": "app-sovstake-vue3",
   "version": "0.0.0",
+  "homepage": "https://sovni.github.io/sovstake/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5050"
-  },
+    "preview": "vite preview --port 5050",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"  },
   "dependencies": {
     "buffer": "^6.0.3",
     "primeflex": "^3.1.3",
