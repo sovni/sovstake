@@ -224,7 +224,8 @@ export default {
       }
     },
     getERC20Contract() {
-      return  window.bc.web3().eth.Contract(ERC20, this.mytoken);
+      var web3js = window.bc.web3();
+      return  new web3js.eth.Contract(ERC20, this.mytoken);
     }
   },
   created() {
