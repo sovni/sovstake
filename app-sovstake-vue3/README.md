@@ -27,3 +27,9 @@ npm run dev
 ```sh
 npm run build
 ```
+
+### Compile, Minify for Production and push to github Pages
+
+```sh
+npm run deploy
+```
